@@ -4,6 +4,7 @@ import ezdxf as dxf
 import os
 import sys
 from sklearn.decomposition import PCA
+from matplotlib.patches import Ellipse
 
 class PLOT:
     def __init__(self, dxf_path, BASE_DIR):
@@ -62,26 +63,27 @@ class PLOT:
 
             coords = np.array(coords)
 
-            rotate_figure(coords)
+            rotated_coords = rotate_figure(coords)
 
             figure, axes = plt.subplots()
 
-            axes.plot(coords[:, 0], coords[:, 1], "bo-", label="DXF data")
+            axes.plot(rotated_coords[:, 0], rotated_coords[:, 1], "bo-", label="DXF data")
 
             axes.plot(0, 0, 'r+', markersize=10, markeredgewidth=2, label="Origin (0,0)")
 
-            # distances = np.sqrt(coords[:, 0]**2 + coords[:, 1]**2)
-            # radius = np.max(distances)
-            circle = plt.Circle( (0, 0), max(coords[:, 0]) , fill = False, linestyle="--", label="Reference circle")
+            fig_width = max(rotated_coords[:, 0]) - min(rotated_coords[:, 0]) # x-axis max ja min points absolute difference
+            fig_length = max(rotated_coords[:, 1]) - min(rotated_coords[:, 1]) # y-axis max ja min points absolute difference
+            print(fig_width, fig_length)
+            ellipse = Ellipse( (0, 0), fig_width, fig_length, fill = False, linestyle="--", label="Reference circle")
 
-            axes.add_patch(circle)
+            axes.add_patch(ellipse)
             axes.set_aspect("equal", adjustable="box")
             axes.set_title(f"Plot for {name}")
             axes.legend()
             axes.grid(True, alpha=0.3)
 
-            axes.set_xlabel("X")
-            axes.set_ylabel("Y")
+            axes.set_xlabel("X (mm)")
+            axes.set_ylabel("Y (mm)")
 
             figure.savefig(os.path.join(self.img_folder, f"{name}.png"), dpi=300)
             print(f"SAVED {name}.png")
@@ -92,13 +94,10 @@ class PLOT:
 
            
 def rotate_figure(coords): # Rotates the figure to be horizontally based on the biggest legthwise difference
-    print("111")
     pca = PCA(n_components=2)
     pca.fit(coords)
 
-    axes = pca.components_
-
-    rotated = coords.dot(axes.T)
+    rotated = pca.transform(coords)
     return rotated
     
 
