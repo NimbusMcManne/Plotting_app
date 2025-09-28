@@ -70,9 +70,9 @@ class PLOT:
 
             axes.plot(0, 0, 'r+', markersize=10, markeredgewidth=2, label="Origin (0,0)")
 
-            distances = np.sqrt(coords[:, 0]**2 + coords[:, 1]**2)
-            radius = np.max(distances)
-            circle = plt.Circle( (0, 0), radius , fill = False, linestyle="--", label="Reference circle")
+            # distances = np.sqrt(coords[:, 0]**2 + coords[:, 1]**2)
+            # radius = np.max(distances)
+            circle = plt.Circle( (0, 0), max(coords[:, 0]) , fill = False, linestyle="--", label="Reference circle")
 
             axes.add_patch(circle)
             axes.set_aspect("equal", adjustable="box")
