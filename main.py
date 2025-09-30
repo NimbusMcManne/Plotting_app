@@ -1,5 +1,4 @@
 from plotting import PLOT
-import matplotlib.pyplot as plt
 import os
 
 def main():
