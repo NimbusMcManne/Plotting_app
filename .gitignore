@@ -1,7 +1,12 @@
 # Python virtual environment
 venv/
 
+plot_figures/
+data/
+
 # Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
+
+

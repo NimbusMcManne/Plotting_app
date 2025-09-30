@@ -51,7 +51,7 @@ class PLOT:
                 coords = coords - centroid
                 coords = coords.tolist()
 
-            self.coordinates[f"needle{i+1}"] = coords
+            self.coordinates[f"Needle {i+1} ({self.x_files[i]})"] = coords
     
 
     def plot_figures(self):
@@ -65,7 +65,7 @@ class PLOT:
 
             rotated_coords = rotate_figure(coords)
 
-            figure, axes = plt.subplots()
+            figure, axes = plt.subplots(figsize=(12, 9))
 
             axes.plot(rotated_coords[:, 0], rotated_coords[:, 1], "bo-", label="DXF data")
 
@@ -73,7 +73,6 @@ class PLOT:
 
             fig_width = max(rotated_coords[:, 0]) - min(rotated_coords[:, 0]) # x-axis max ja min points absolute difference
             fig_length = max(rotated_coords[:, 1]) - min(rotated_coords[:, 1]) # y-axis max ja min points absolute difference
-            print(fig_width, fig_length)
             ellipse = Ellipse( (0, 0), fig_width, fig_length, fill = False, linestyle="--", label="Reference circle")
 
             axes.add_patch(ellipse)
