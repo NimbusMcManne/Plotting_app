@@ -13,14 +13,22 @@ class PLOT:
         self.doc = None
         self.x_files = [entry for entry in os.listdir(self.dxf_path) if os.path.isfile(os.path.join(self.dxf_path, entry))]
         self.files = []
+        self.ellipse_width_height = dict()
         self.coordinates = dict()
         self.img_folder = os.path.join(self.BASE_DIR, "plot_figures")
 
-    def read_file(self):
+    def get_ellipse_width_height(self):
+        return self.ellipse_width_height
+
+    def get_coordinates(self):
+        return self.coordinates
+
+    def read_file(self, to_print=False):
         for i in self.x_files:
             try:
                 self.doc = dxf.readfile(os.path.join(self.dxf_path, i))
-                print(f"Found file {i}")
+                if to_print == True:
+                    print(f"Found file {i}")
                 self.files.append(self.doc)
             except IOError:
                 print(f"Not a DXF file or a generic I/O error.")
@@ -28,6 +36,7 @@ class PLOT:
             except dxf.DXFStructureError:
                 print(f"Invalid or corrupted DXF file.")
                 sys.exit(2)
+
 
     def to_array(self, center_at_origin=True):
         for i, doc in enumerate(self.files):
@@ -53,8 +62,32 @@ class PLOT:
 
             self.coordinates[f"Needle {i+1} ({self.x_files[i]})"] = coords
     
+    def _rotate_coords_pca(self, coords):
+        pca = PCA(n_components=2)
+        pca.fit(coords)
+        rotated = pca.transform(coords)
+        return rotated
 
-    def plot_figures(self):
+    def compute_ellipse_dimensions(self):
+        # Compute width/height after PCA rotation without plotting
+        if not self.coordinates:
+            return
+        for name, coords in self.coordinates.items():
+            if not coords:
+                continue
+            coords_np = np.array(coords)
+            rotated = self._rotate_coords_pca(coords_np)
+            max_x = np.max(rotated[:, 0])
+            min_x = np.min(rotated[:, 0])
+            max_y = np.max(rotated[:, 1])
+            min_y = np.min(rotated[:, 1])
+            fig_width = max_x - min_x
+            fig_length = max_y - min_y
+            self.ellipse_width_height[name] = (fig_width, fig_length)
+        return max_x, min_x, max_y, min_y
+
+
+    def plot_figures(self, save=True):
 
         for name, coords in self.coordinates.items():
             if not coords:
@@ -62,8 +95,7 @@ class PLOT:
                 continue
 
             coords = np.array(coords)
-
-            rotated_coords = rotate_figure(coords)
+            rotated_coords = self._rotate_coords_pca(coords)
 
             figure, axes = plt.subplots(figsize=(12, 9))
 
@@ -73,6 +105,7 @@ class PLOT:
 
             fig_width = max(rotated_coords[:, 0]) - min(rotated_coords[:, 0]) # x-axis max ja min points absolute difference
             fig_length = max(rotated_coords[:, 1]) - min(rotated_coords[:, 1]) # y-axis max ja min points absolute difference
+            self.ellipse_width_height[name] = (fig_width, fig_length)
             ellipse = Ellipse( (0, 0), fig_width, fig_length, fill = False, linestyle="--", label="Reference circle")
 
             axes.add_patch(ellipse)
@@ -83,21 +116,16 @@ class PLOT:
 
             axes.set_xlabel("X (mm)")
             axes.set_ylabel("Y (mm)")
-
-            figure.savefig(os.path.join(self.img_folder, f"{name}.png"), dpi=300)
+            if save:
+                figure.savefig(os.path.join(self.img_folder, f"{name}.png"), dpi=300)
             print(f"SAVED {name}.png")
 
-            plt.show()
+            #plt.show()
             plt.close(figure)
 
 
            
-def rotate_figure(coords): # Rotates the figure to be horizontally based on the biggest legthwise difference
-    pca = PCA(n_components=2)
-    pca.fit(coords)
 
-    rotated = pca.transform(coords)
-    return rotated
     
 
 
