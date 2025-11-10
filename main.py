@@ -11,13 +11,12 @@ def main():
 
     plot.read_file(to_print=True)
     plot.to_array()
-    plot.plot_figures()
+    
     
     compare.get_shape_similarities()
-    # compare.get_ellipse_circumferences()
-    # compare.get_figure_circumferences()
-    # compare.compare_circumferences()
+    similarities = compare.get_ellipse_similarities()
 
+    plot.plot_figures(similarities)
 
 if __name__ == "__main__":
     main()

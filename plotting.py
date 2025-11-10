@@ -37,7 +37,6 @@ class PLOT:
                 print(f"Invalid or corrupted DXF file.")
                 sys.exit(2)
 
-
     def to_array(self, center_at_origin=True):
         for i, doc in enumerate(self.files):
             coords = []
@@ -87,7 +86,7 @@ class PLOT:
         return max_x, min_x, max_y, min_y
 
 
-    def plot_figures(self, save=True):
+    def plot_figures(self, similarities, save=True):
 
         for name, coords in self.coordinates.items():
             if not coords:
@@ -107,6 +106,8 @@ class PLOT:
             fig_length = max(rotated_coords[:, 1]) - min(rotated_coords[:, 1]) # y-axis max ja min points absolute difference
             self.ellipse_width_height[name] = (fig_width, fig_length)
             ellipse = Ellipse( (0, 0), fig_width, fig_length, fill = False, linestyle="--", label="Reference circle")
+
+            axes.text(0.05, 0, f"Similarity {similarities[name]}%", backgroundcolor="blue", color="white", fontsize=16)
 
             axes.add_patch(ellipse)
             axes.set_aspect("equal", adjustable="box")

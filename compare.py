@@ -16,6 +16,9 @@ class COMPARE:
         self.figure_circumference = dict()
         self.ellipse_similarity = dict()
     
+    def get_ellipse_similarities(self):
+        return self.ellipse_similarity
+
     def get_ellipse_circumferences(self):
 
         def circumference(a, b):
@@ -265,12 +268,22 @@ class COMPARE:
             return
 
         def construct_ellipse(width, height, num_points, cx=0.0, cy=0.0):
+            if num_points <= 0:
+                return np.empty((0, 2), dtype=float)
             angles = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
             ellipse_points = np.column_stack((
                 cx + (width / 2.0) * np.cos(angles),
                 cy + (height / 2.0) * np.sin(angles)
             ))
             return ellipse_points
+        
+        def split_figure(coords):
+            arr = np.asarray(coords, dtype=float)
+            if arr.size == 0:
+                return [], []
+            pos_coords = arr[arr[:, 0] >= 0].tolist()
+            neg_coords = arr[arr[:, 0] <= 0].tolist()
+            return pos_coords, neg_coords
 
         for name, (width, height) in ellipse.items():
             pts = figure.get(name)
@@ -282,9 +295,23 @@ class COMPARE:
                 print(f"Empty coordinates for {name}, skipping...")
                 continue
 
-            ellipse_points = construct_ellipse(width, height, num_points, cx=0.0, cy=0.0)
-            similarity = round(shape_similarity(np.asarray(ellipse_points, dtype=float), np.asarray(pts, dtype=float)), 2)
-            print(f"{name} similarity to an ellipse is: {similarity*100}%")
+
+            pos_fig_pts, neg_fig_pts = split_figure(np.asarray(pts, dtype=float))
+            num_pos = len(pos_fig_pts)
+            num_neg = len(neg_fig_pts)
+
+            pos_ellipse_pts = construct_ellipse(width, height, num_pos, cx=0.0, cy=0.0)
+            neg_ellipse_pts = construct_ellipse(width, height, num_neg, cx=0.0, cy=0.0)
+            
+            pos_ellipse_pts = np.asarray(pos_ellipse_pts, dtype=float)
+            neg_ellipse_pts = np.asarray(neg_ellipse_pts, dtype=float)
+            pos_fig_pts = np.asarray(pos_fig_pts, dtype=float)
+            neg_fig_pts = np.asarray(neg_fig_pts, dtype=float)
+
+            pos_similarity = shape_similarity(pos_ellipse_pts, pos_fig_pts)
+            neg_similarity = shape_similarity(neg_ellipse_pts, neg_fig_pts)
+            similarity = round(100 * (pos_similarity + neg_similarity) / 2.0, 2)
+            print(f"{name} similarity to an ellipse is: {similarity}%")
             self.ellipse_similarity[name] = similarity
 
         
