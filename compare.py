@@ -4,20 +4,30 @@ import sys
 from scipy.spatial.distance import cdist
 from shapesimilarity import shape_similarity
 from plotting import PLOT
+from shapes import SHAPE
 
 class COMPARE:
     def __init__(self, dxf_folder, BASE_DIR):
         self.BASE_DIR = BASE_DIR
         self.dxf_folder = dxf_folder
         self.c = PLOT(dxf_folder, BASE_DIR)
+        self.shape = SHAPE()
         self.ellipse_areas = dict()
         self.ellipse_circumference = dict()
         self.figure_areas = dict()
         self.figure_circumference = dict()
         self.ellipse_similarity = dict()
+        self.upper_ellipse_datapoints = dict()
+        self.lower_ellipse_datapoints = dict()
     
     def get_ellipse_similarities(self):
         return self.ellipse_similarity
+
+    def get_upper_ellipse_datapoints(self):
+        return self.upper_ellipse_datapoints
+
+    def get_lower_ellipse_datapoints(self):
+        return self.lower_ellipse_datapoints
 
     def get_ellipse_circumferences(self):
 
@@ -249,7 +259,7 @@ class COMPARE:
         #     self.ellipse_similarity[name] = similarity
 
     
-    def get_shape_similarities(self):
+    def get_ellipse_shape_similarities(self):
         ellipse = self.c.get_ellipse_width_height()
         figure = self.c.get_coordinates()
 
@@ -267,23 +277,60 @@ class COMPARE:
             print("Ellipse dimensions not available. Aborting shape similarity computation.")
             return
 
-        def construct_ellipse(width, height, num_points, cx=0.0, cy=0.0):
-            if num_points <= 0:
-                return np.empty((0, 2), dtype=float)
-            angles = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
-            ellipse_points = np.column_stack((
-                cx + (width / 2.0) * np.cos(angles),
-                cy + (height / 2.0) * np.sin(angles)
-            ))
-            return ellipse_points
-        
-        def split_figure(coords):
-            arr = np.asarray(coords, dtype=float)
-            if arr.size == 0:
-                return [], []
-            pos_coords = arr[arr[:, 0] >= 0].tolist()
-            neg_coords = arr[arr[:, 0] <= 0].tolist()
-            return pos_coords, neg_coords
+        for name, (width, height) in ellipse.items():
+            pts = figure.get(name)
+            if not pts:
+                print(f"No coordinates for {name}, skipping...")
+                continue
+            num_points = len(pts)
+            if num_points == 0:
+                print(f"Empty coordinates for {name}, skipping...")
+                continue
+
+            pos_fig_pts, neg_fig_pts = self.shape.split_figure(np.asarray(pts, dtype=float))
+            num_pos = len(pos_fig_pts)
+            num_neg = len(neg_fig_pts)
+
+            # Skip if either half is empty
+            if num_pos == 0 or num_neg == 0:
+                print(f"Insufficient points in one half for {name}, skipping...")
+                continue
+
+            # Construct half-ellipses with matching point counts
+            pos_ellipse_pts = self.shape.construct_half_ellipse(width, height, num_pos, side='pos', cx=0.0, cy=0.0)
+            neg_ellipse_pts = self.shape.construct_half_ellipse(width, height, num_neg, side='neg', cx=0.0, cy=0.0)
+            
+            pos_ellipse_pts = np.asarray(pos_ellipse_pts, dtype=float)
+            neg_ellipse_pts = np.asarray(neg_ellipse_pts, dtype=float)
+            pos_fig_pts = np.asarray(pos_fig_pts, dtype=float)
+            neg_fig_pts = np.asarray(neg_fig_pts, dtype=float)
+            self.upper_ellipse_datapoints[name] = pos_fig_pts
+            self.lower_ellipse_datapoints[name] = neg_fig_pts 
+
+            pos_similarity = shape_similarity(pos_ellipse_pts, pos_fig_pts)
+            neg_similarity = shape_similarity(neg_ellipse_pts, neg_fig_pts)
+            similarity = round(100 * (pos_similarity + neg_similarity) / 2.0, 2)
+            print(f"{name} similarity to an ellipse is: {similarity}%")
+            self.ellipse_similarity[name] = similarity
+
+    
+    def get_diamond_shape_similarities(self):
+        ellipse = self.c.get_ellipse_width_height()
+        figure = self.c.get_coordinates()
+
+        # Ensure we have coordinates and ellipse dimensions for THIS PLOT instance
+        if not figure:
+            self.c.read_file()
+            self.c.to_array(center_at_origin=True)
+            figure = self.c.get_coordinates()
+
+        if not ellipse:
+            self.c.compute_ellipse_dimensions()
+            ellipse = self.c.get_ellipse_width_height()
+
+        if not ellipse:
+            print("Ellipse dimensions not available. Aborting shape similarity computation.")
+            return
 
         for name, (width, height) in ellipse.items():
             pts = figure.get(name)
@@ -295,23 +342,28 @@ class COMPARE:
                 print(f"Empty coordinates for {name}, skipping...")
                 continue
 
-
-            pos_fig_pts, neg_fig_pts = split_figure(np.asarray(pts, dtype=float))
+            pos_fig_pts, neg_fig_pts = self.shape.split_figure(np.asarray(pts, dtype=float))
             num_pos = len(pos_fig_pts)
             num_neg = len(neg_fig_pts)
 
-            pos_ellipse_pts = construct_ellipse(width, height, num_pos, cx=0.0, cy=0.0)
-            neg_ellipse_pts = construct_ellipse(width, height, num_neg, cx=0.0, cy=0.0)
+            # Skip if either half is empty
+            if num_pos == 0 or num_neg == 0:
+                print(f"Insufficient points in one half for {name}, skipping...")
+                continue
+
+            # Construct half-ellipses with matching point counts
+            pos_ellipse_pts = self.shape.construct_half_ellipse(width, height, num_pos, side='pos', cx=0.0, cy=0.0)
+            neg_ellipse_pts = self.shape.construct_half_ellipse(width, height, num_neg, side='neg', cx=0.0, cy=0.0)
             
             pos_ellipse_pts = np.asarray(pos_ellipse_pts, dtype=float)
             neg_ellipse_pts = np.asarray(neg_ellipse_pts, dtype=float)
             pos_fig_pts = np.asarray(pos_fig_pts, dtype=float)
             neg_fig_pts = np.asarray(neg_fig_pts, dtype=float)
+            self.upper_datapoints[name] = pos_fig_pts
+            self.lower_datapoints[name] = neg_fig_pts 
 
             pos_similarity = shape_similarity(pos_ellipse_pts, pos_fig_pts)
             neg_similarity = shape_similarity(neg_ellipse_pts, neg_fig_pts)
             similarity = round(100 * (pos_similarity + neg_similarity) / 2.0, 2)
             print(f"{name} similarity to an ellipse is: {similarity}%")
             self.ellipse_similarity[name] = similarity
-
-        

@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
+from helper import HELPER
 import numpy as np
 import ezdxf as dxf
 import os
 import sys
-from sklearn.decomposition import PCA
 from matplotlib.patches import Ellipse
 
 class PLOT:
@@ -16,6 +16,7 @@ class PLOT:
         self.ellipse_width_height = dict()
         self.coordinates = dict()
         self.img_folder = os.path.join(self.BASE_DIR, "plot_figures")
+        self.helper = HELPER()
 
     def get_ellipse_width_height(self):
         return self.ellipse_width_height
@@ -60,12 +61,6 @@ class PLOT:
                 coords = coords.tolist()
 
             self.coordinates[f"Needle {i+1} ({self.x_files[i]})"] = coords
-    
-    def _rotate_coords_pca(self, coords):
-        pca = PCA(n_components=2)
-        pca.fit(coords)
-        rotated = pca.transform(coords)
-        return rotated
 
     def compute_ellipse_dimensions(self):
         # Compute width/height after PCA rotation without plotting
@@ -75,7 +70,7 @@ class PLOT:
             if not coords:
                 continue
             coords_np = np.array(coords)
-            rotated = self._rotate_coords_pca(coords_np)
+            rotated = self.helper._rotate_coords_pca(coords_np)
             max_x = np.max(rotated[:, 0])
             min_x = np.min(rotated[:, 0])
             max_y = np.max(rotated[:, 1])
@@ -86,7 +81,7 @@ class PLOT:
         return max_x, min_x, max_y, min_y
 
 
-    def plot_figures(self, similarities, save=True):
+    def plot_similarity_dict_figures(self, datapoints, save=True, show=False):
 
         for name, coords in self.coordinates.items():
             if not coords:
@@ -94,7 +89,7 @@ class PLOT:
                 continue
 
             coords = np.array(coords)
-            rotated_coords = self._rotate_coords_pca(coords)
+            rotated_coords = self.helper._rotate_coords_pca(coords)
 
             figure, axes = plt.subplots(figsize=(12, 9))
 
@@ -107,7 +102,7 @@ class PLOT:
             self.ellipse_width_height[name] = (fig_width, fig_length)
             ellipse = Ellipse( (0, 0), fig_width, fig_length, fill = False, linestyle="--", label="Reference circle")
 
-            axes.text(0.05, 0, f"Similarity {similarities[name]}%", backgroundcolor="blue", color="white", fontsize=16)
+            axes.text(0.05, 0, f"Similarity {datapoints[name]}%", backgroundcolor="blue", color="white", fontsize=16)
 
             axes.add_patch(ellipse)
             axes.set_aspect("equal", adjustable="box")
@@ -117,16 +112,84 @@ class PLOT:
 
             axes.set_xlabel("X (mm)")
             axes.set_ylabel("Y (mm)")
+
             if save:
                 figure.savefig(os.path.join(self.img_folder, f"{name}.png"), dpi=300)
-            print(f"SAVED {name}.png")
+                print(f"SAVED {name}.png")
 
-            #plt.show()
+            if show:
+                plt.show()
+            plt.close(figure)
+        
+    def plot_datapoint_dict_figures(self, datapoints, save=False, show=True):
+        if len(datapoints) == 0:
+            print(f"No data available!")
+            return
+        for name, coords in datapoints.items():
+            if not list(coords):
+                print(f"No coordinates found for {name}, skipping...")
+                continue
+
+            coords = np.array(coords)
+
+            figure, axes = plt.subplots(figsize=(12, 9))
+
+            axes.plot(coords[:, 0], coords[:, 1], "bo-", label="DXF data")
+
+            axes.plot(0, 0, 'r+', markersize=10, markeredgewidth=2, label="Origin (0,0)")
+
+            axes.set_aspect("equal", adjustable="box")
+            axes.set_title(f"Plot for {name}")
+            axes.legend()
+            axes.grid(True, alpha=0.3)
+
+            axes.set_xlabel("X (mm)")
+            axes.set_ylabel("Y (mm)")
+
+            if save:
+                figure.savefig(os.path.join(self.img_folder, f"{name}.png"), dpi=300)
+                print(f"SAVED {name}.png")
+
+            if show:
+                plt.show()
             plt.close(figure)
 
+    
+    def plot_list(self, datapoints, save=False, show=True):
+        # Convert to numpy array first
+        datapoints = np.asarray(datapoints, dtype=float)
+        
+        # Check if empty after conversion
+        if datapoints.size == 0 or len(datapoints) == 0:
+            print("There are no datapoints in this list!")
+            return
+        
+        # Check if it's a 2D array with at least 2 columns (x, y)
+        if datapoints.ndim != 2 or datapoints.shape[1] < 2:
+            print(f"Expected 2D array with shape (n, 2), got shape {datapoints.shape}")
+            return
 
-           
+        figure = plt.figure(figsize=(12, 8))
+        # Plot all x and y coordinates: datapoints[:, 0] gets all x values, datapoints[:, 1] gets all y values
+        plt.plot(datapoints[:, 0], datapoints[:, 1], "ro-", label="Half of the figure", linewidth=2, markersize=4)
+        plt.title("Plot of datapoints")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.xlabel("X (mm)")
+        plt.ylabel("Y (mm)")
+        plt.axis("equal")
+        plt.axhline(y=0, color='k', linestyle='--', alpha=0.3)
+        plt.axvline(x=0, color='k', linestyle='--', alpha=0.3)
 
+        if save:
+            name = input("Give this shit a name: ")
+            figure.savefig(os.path.join(self.img_folder, f"{name}.png"), dpi=300)
+            print(f"SAVED {name}.png")
+
+        if show:
+            plt.show()
+        else:
+            plt.close(figure)
     
 
 
