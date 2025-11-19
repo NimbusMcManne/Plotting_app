@@ -17,17 +17,37 @@ class COMPARE:
         self.figure_areas = dict()
         self.figure_circumference = dict()
         self.ellipse_similarity = dict()
+        self.diamond_similarity = dict()
         self.upper_ellipse_datapoints = dict()
         self.lower_ellipse_datapoints = dict()
+        self.upper_diamond_datapoints = dict()
+        self.lower_diamond_datapoints = dict()
+        self.upper_figure_datapoints = dict()
+        self.lower_figure_datapoints = dict()
     
     def get_ellipse_similarities(self):
         return self.ellipse_similarity
 
+    def get_diamond_similarities(self):
+        return self.diamond_similarity
+
     def get_upper_ellipse_datapoints(self):
         return self.upper_ellipse_datapoints
+    
+    def get_upper_diamond_datapoints(self):
+        return self.upper_diamond_datapoints
+
+    def get_upper_figure_datapoints(self):
+        return self.upper_figure_datapoints
 
     def get_lower_ellipse_datapoints(self):
         return self.lower_ellipse_datapoints
+
+    def get_lower_diamond_datapoints(self):
+        return self.lower_diamond_datapoints
+
+    def get_lower_figure_datapoints(self):
+        return self.lower_figure_datapoints
 
     def get_ellipse_circumferences(self):
 
@@ -36,26 +56,26 @@ class COMPARE:
             c = np.pi*(a+b)*(1+(3*h)/10+np.sqrt(4-3*h))
             return c
 
-        ellipse = self.c.get_ellipse_width_height()
+        ellipse = self.c.get_width_height()
         if not ellipse:
             if not self.c.get_coordinates():
                 self.c.read_file()
                 self.c.to_array(center_at_origin=True)
 
             self.c.compute_ellipse_dimensions()
-            ellipse = self.c.get_ellipse_width_height()
+            ellipse = self.c.get_width_height()
         for name, (width, height) in ellipse.items():
             self.ellipse_circumference[name] = circumference(width/2, height/2)
     
     def get_ellipse_areas(self):
-        ellipse = self.c.get_ellipse_width_height()
+        ellipse = self.c.get_width_height()
         if not ellipse:
             if not self.c.get_coordinates():
                 self.c.read_file()
                 self.c.to_array(center_at_origin=True)
 
-            self.c.compute_ellipse_dimensions()
-            ellipse = self.c.get_ellipse_width_height()
+            self.c.compute_dimensions()
+            ellipse = self.c.get_width_height()
         for name, (width, height) in ellipse.items():
             self.ellipse_areas[name] = float(np.pi * (width * 0.5) * (height * 0.5))
 
@@ -260,7 +280,7 @@ class COMPARE:
 
     
     def get_ellipse_shape_similarities(self):
-        ellipse = self.c.get_ellipse_width_height()
+        ellipse = self.c.get_width_height()
         figure = self.c.get_coordinates()
 
         # Ensure we have coordinates and ellipse dimensions for THIS PLOT instance
@@ -270,8 +290,8 @@ class COMPARE:
             figure = self.c.get_coordinates()
 
         if not ellipse:
-            self.c.compute_ellipse_dimensions()
-            ellipse = self.c.get_ellipse_width_height()
+            self.c.compute_dimensions()
+            ellipse = self.c.get_width_height()
 
         if not ellipse:
             print("Ellipse dimensions not available. Aborting shape similarity computation.")
@@ -304,8 +324,6 @@ class COMPARE:
             neg_ellipse_pts = np.asarray(neg_ellipse_pts, dtype=float)
             pos_fig_pts = np.asarray(pos_fig_pts, dtype=float)
             neg_fig_pts = np.asarray(neg_fig_pts, dtype=float)
-            self.upper_ellipse_datapoints[name] = pos_fig_pts
-            self.lower_ellipse_datapoints[name] = neg_fig_pts 
 
             pos_similarity = shape_similarity(pos_ellipse_pts, pos_fig_pts)
             neg_similarity = shape_similarity(neg_ellipse_pts, neg_fig_pts)
@@ -315,7 +333,7 @@ class COMPARE:
 
     
     def get_diamond_shape_similarities(self):
-        ellipse = self.c.get_ellipse_width_height()
+        diamond = self.c.get_width_height()
         figure = self.c.get_coordinates()
 
         # Ensure we have coordinates and ellipse dimensions for THIS PLOT instance
@@ -324,15 +342,15 @@ class COMPARE:
             self.c.to_array(center_at_origin=True)
             figure = self.c.get_coordinates()
 
-        if not ellipse:
-            self.c.compute_ellipse_dimensions()
-            ellipse = self.c.get_ellipse_width_height()
+        if not diamond:
+            self.c.compute_dimensions()
+            ellipse = self.c.get_width_height()
 
-        if not ellipse:
-            print("Ellipse dimensions not available. Aborting shape similarity computation.")
+        if not diamond:
+            print("Diamond dimensions not available. Aborting shape similarity computation.")
             return
 
-        for name, (width, height) in ellipse.items():
+        for name, (width, height) in diamond.items():
             pts = figure.get(name)
             if not pts:
                 print(f"No coordinates for {name}, skipping...")
@@ -351,19 +369,22 @@ class COMPARE:
                 print(f"Insufficient points in one half for {name}, skipping...")
                 continue
 
-            # Construct half-ellipses with matching point counts
-            pos_ellipse_pts = self.shape.construct_half_ellipse(width, height, num_pos, side='pos', cx=0.0, cy=0.0)
-            neg_ellipse_pts = self.shape.construct_half_ellipse(width, height, num_neg, side='neg', cx=0.0, cy=0.0)
+            # Construct half-diamonds with matching point counts
+            pos_diamond_pts = self.shape.construct_half_diamond(width, height, num_pos, side='pos', cx=0.0, cy=0.0)
+            neg_diamond_pts = self.shape.construct_half_diamond(width, height, num_neg, side='neg', cx=0.0, cy=0.0)
             
-            pos_ellipse_pts = np.asarray(pos_ellipse_pts, dtype=float)
-            neg_ellipse_pts = np.asarray(neg_ellipse_pts, dtype=float)
+            pos_diamond_pts = np.asarray(pos_diamond_pts, dtype=float)
+            neg_diamond_pts = np.asarray(neg_diamond_pts, dtype=float)
+            self.upper_diamond_datapoints[name] = pos_diamond_pts
+            self.lower_diamond_datapoints[name] = neg_diamond_pts
+
             pos_fig_pts = np.asarray(pos_fig_pts, dtype=float)
             neg_fig_pts = np.asarray(neg_fig_pts, dtype=float)
-            self.upper_datapoints[name] = pos_fig_pts
-            self.lower_datapoints[name] = neg_fig_pts 
+            self.upper_figure_datapoints[name] = pos_fig_pts
+            self.lower_figure_datapoints[name] = neg_fig_pts
 
-            pos_similarity = shape_similarity(pos_ellipse_pts, pos_fig_pts)
-            neg_similarity = shape_similarity(neg_ellipse_pts, neg_fig_pts)
+            pos_similarity = shape_similarity(pos_diamond_pts, pos_fig_pts)
+            neg_similarity = shape_similarity(neg_diamond_pts, neg_fig_pts)
             similarity = round(100 * (pos_similarity + neg_similarity) / 2.0, 2)
-            print(f"{name} similarity to an ellipse is: {similarity}%")
-            self.ellipse_similarity[name] = similarity
+            print(f"{name} similarity to an diamond is: {similarity}%")
+            self.diamond_similarity[name] = similarity

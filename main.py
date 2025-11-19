@@ -15,12 +15,20 @@ def main():
     plot.to_array()
     
     compare.get_ellipse_shape_similarities()
-    similarities = compare.get_ellipse_similarities()
-    upper_ellipse_datapoints = compare.get_upper_ellipse_datapoints()
-    lower_datapoints = compare.get_lower_ellipse_datapoints()
+    ellipse_similarities = compare.get_ellipse_similarities()
+    # upper_ellipse_datapoints = compare.get_upper_ellipse_datapoints()
+    # lower_datapoints = compare.get_lower_ellipse_datapoints()
 
-    plot.plot_similarity_dict_figures(similarities, save=False)
-    plot.plot_datapoint_dict_figures(upper_ellipse_datapoints, save=False, show=True)
+    compare.get_diamond_shape_similarities()
+    diamond_similarities = compare.get_diamond_similarities()
+    diamond_dat = compare.get_upper_diamond_datapoints()
+    fig_dat = compare.get_upper_figure_datapoints()
+
+    plot.plot_similarity_dict_figures(ellipse_similarities, save=True)
+    plot.plot_similarity_dict_figures(diamond_similarities, shape="diamond", save=True)
+
+    plot.plot_datapoint_dict_figures(diamond_dat, shape="diamond", save=False, show=False)
+    plot.plot_datapoint_dict_figures(fig_dat, shape="figure", save=False, show=False)
     #plot.plot_dict_figures(lower_datapoints, save=False)
 
 if __name__ == "__main__":

@@ -35,12 +35,14 @@ class SHAPE:
     def construct_half_ellipse(self, width, height, num_points, side='pos', cx=0.0, cy=0.0):
         if num_points <= 0:
             return np.empty((0, 2), dtype=float)
+        if side not in ('pos', 'neg'):
+            raise ValueError("side must be 'pos' or 'neg'")
         if side == 'pos':
-            # Right half: angles from -π/2 to π/2
-            angles = np.linspace(-np.pi / 2, np.pi / 2, num_points, endpoint=False)
+            # Upper half: angles from 0 to π
+            angles = np.linspace(0, np.pi, num_points, endpoint=False)
         else:  # side == 'neg'
-            # Left half: angles from π/2 to 3π/2
-            angles = np.linspace(np.pi / 2, 3 * np.pi / 2, num_points, endpoint=False)
+            # Lower half: angles from π to 2π
+            angles = np.linspace(np.pi, 2 * np.pi, num_points, endpoint=False)
         ellipse_points = np.column_stack((
             cx + (width / 2.0) * np.cos(angles),
             cy + (height / 2.0) * np.sin(angles)
@@ -57,15 +59,15 @@ class SHAPE:
         half_width = width / 2.0
         half_height = height / 2.0
 
-        top = np.array([cx, cy + half_height], dtype=float)
-        mid = np.array([cx + half_width, cy], dtype=float) if side == 'pos' else np.array([cx - half_width, cy], dtype=float)
-        bottom = np.array([cx, cy - half_height], dtype=float)
+        right = np.array([cx + half_width, cy], dtype=float)
+        apex = np.array([cx, cy + half_height], dtype=float) if side == 'pos' else np.array([cx, cy - half_height], dtype=float)
+        left = np.array([cx - half_width, cy], dtype=float)
 
         if num_points == 1:
-            return np.array([top], dtype=float)
+            return np.array([apex], dtype=float)
 
-        seg1 = mid - top
-        seg2 = bottom - mid
+        seg1 = apex - right
+        seg2 = left - apex
         len1 = np.linalg.norm(seg1)
         len2 = np.linalg.norm(seg2)
         total_len = len1 + len2
@@ -78,11 +80,11 @@ class SHAPE:
         for dist in distances:
             if dist <= len1 or len2 == 0:
                 t = 0.0 if len1 == 0 else dist / len1
-                point = top + t * seg1
+                point = right + t * seg1
             else:
                 remaining = dist - len1
                 t = 0.0 if len2 == 0 else remaining / len2
-                point = mid + t * seg2
+                point = apex + t * seg2
             points.append(point)
 
         return np.asarray(points, dtype=float)
