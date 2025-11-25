@@ -14,6 +14,7 @@ class PLOT:
         self.x_files = [entry for entry in os.listdir(self.dxf_path) if os.path.isfile(os.path.join(self.dxf_path, entry))]
         self.files = []
         self.width_height = dict()
+        self.width_height_mean = list()
         self.coordinates = dict()
         self.img_folder = os.path.join(self.BASE_DIR, "plot_figures")
         self.helper = HELPER()
@@ -23,6 +24,9 @@ class PLOT:
 
     def get_coordinates(self):
         return self.coordinates
+
+    def get_average_width_height(self):
+        return self.width_height_mean
 
     def read_file(self, to_print=False):
         for i in self.x_files:
@@ -38,7 +42,6 @@ class PLOT:
                 print(f"Invalid or corrupted DXF file.")
                 sys.exit(2)
 
-    
 
     def to_array(self, center_at_origin=True):
         for i, doc in enumerate(self.files):
@@ -66,6 +69,7 @@ class PLOT:
             coords.append(coords[0])
             self.coordinates[f"Needle {i+1} ({self.x_files[i]})"] = coords
 
+
     def compute_dimensions(self):
         # Compute width/height after PCA rotation without plotting
         if not self.coordinates:
@@ -82,10 +86,26 @@ class PLOT:
             fig_width = max_x - min_x
             fig_length = max_y - min_y
             self.width_height[name] = (fig_width, fig_length)
-        return max_x, min_x, max_y, min_y
 
 
-    def plot_similarity_dict_figures(self, datapoints, shape="ellipse", save=True, show=False):
+
+    def take_average_width_height(self):
+        dimensions = self.get_width_height()
+        if not dimensions:
+            if not self.get_coordinates():
+                self.read_file()
+                self.to_array()
+            self.compute_dimensions()
+            dimensions = self.get_width_height()
+
+        width_height = np.array(list(dimensions.values()))
+        width_mean = np.mean(width_height[:, 0])
+        height_mean = np.mean(width_height[:, 1])
+        self.width_height_mean = [width_mean, height_mean]
+
+
+
+    def plot_similarity_dict_figures(self, datapoints, typ="dynamic", shape="ellipse", save=True, show=False):
 
         for name, coords in self.coordinates.items():
             if not coords:
@@ -101,9 +121,13 @@ class PLOT:
 
             axes.plot(0, 0, 'r+', markersize=10, markeredgewidth=2, label="Origin (0,0)")
 
-            fig_width = max(rotated_coords[:, 0]) - min(rotated_coords[:, 0]) # x-axis max ja min points absolute difference
-            fig_length = max(rotated_coords[:, 1]) - min(rotated_coords[:, 1]) # y-axis max ja min points absolute difference
-            self.width_height[name] = (fig_width, fig_length)
+            
+            if typ == "dynamic":
+                fig_width = max(rotated_coords[:, 0]) - min(rotated_coords[:, 0]) # x-axis max ja min points absolute difference
+                fig_length = max(rotated_coords[:, 1]) - min(rotated_coords[:, 1]) # y-axis max ja min points absolute difference
+                self.width_height[name] = (fig_width, fig_length)
+            elif typ == "static":
+                (fig_width, fig_length) = self.get_average_width_height()
 
             if shape == "ellipse":
                 ellipse = Ellipse( (0, 0), fig_width, fig_length, fill = False, linestyle="--", label="Reference circle")
@@ -120,13 +144,29 @@ class PLOT:
                     closed=True,
                     fill=False,
                     linestyle="--",
-                    edgecolor="orange",
+                    edgecolor="red",
                     label="Reference diamond"
                 )
                 axes.add_patch(diamond)
+            elif shape == "rectangle":
+                rect_points = [
+                    (-fig_width / 2.0, fig_length / 2.0),
+                    (fig_width / 2.0, fig_length / 2.0),
+                    (fig_width / 2.0, -fig_length / 2.0),
+                    (-fig_width / 2.0, -fig_length / 2.0),
+                ]
+                rectangle = Polygon(
+                        rect_points,
+                        closed=True,
+                        fill=False,
+                        linestyle="--",
+                        edgecolor="green",
+                        label="Reference rectangle"
+                    )
+                axes.add_patch(rectangle)
 
 
-            axes.text(0.05, 0, f"Similarity {datapoints[name]}%", backgroundcolor="blue", color="white", fontsize=16)
+            axes.text(0.05, 0, f"Similarity {datapoints[name]:.2f}%", backgroundcolor="blue", color="white", fontsize=16)
 
             axes.set_aspect("equal", adjustable="box")
             axes.set_title(f"Plot for {name}")
@@ -137,13 +177,18 @@ class PLOT:
             axes.set_ylabel("Y (mm)")
 
             if save:
-                figure.savefig(os.path.join(self.img_folder, f"{name}({shape}).png"), dpi=300)
-                print(f"SAVED {name}.png")
+                figure.savefig(os.path.join(self.img_folder, f"{name}({typ} {shape}).png"), dpi=300)
+                print(f"SAVED {name}{shape}.png")
 
             if show:
                 plt.show()
             plt.close(figure)
+
+    
         
+
+
+
     def plot_datapoint_dict_figures(self, datapoints, shape="figure", save=False, show=True):
         if len(datapoints) == 0:
             print(f"No data available!")
@@ -171,7 +216,7 @@ class PLOT:
 
             if save:
                 figure.savefig(os.path.join(self.img_folder, f"half_{name}({shape}).png"), dpi=300)
-                print(f"SAVED {name}.png")
+                print(f"SAVED {name}{shape}.png")
 
             if show:
                 plt.show()

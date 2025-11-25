@@ -3,6 +3,7 @@ venv/
 
 plot_figures/
 data/
+old_plots/
 
 # Python cache files
 __pycache__/
