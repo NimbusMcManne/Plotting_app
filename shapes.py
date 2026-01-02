@@ -15,8 +15,15 @@ class SHAPE:
             return [], []
         if arr.ndim != 2 or arr.shape[1] < 2:
             raise ValueError(f"Expected coords shaped (n, 2), got {arr.shape}")
-        pos_coords = arr[arr[:, 1] >= 0].tolist()
-        neg_coords = arr[arr[:, 1] <= 0].tolist()
+        pos_indices = np.where(arr[:, 1] >= 0)[0]
+        neg_indices = np.where(arr[:, 1] < 0)[0]
+    
+        pos_coords = arr[pos_indices].tolist()
+        neg_coords = arr[neg_indices].tolist()
+
+        pos_coords = self.helper.center_coords_at_origin(pos_coords)
+        neg_coords = self.helper.center_coords_at_origin(neg_coords)
+
         return pos_coords, neg_coords
 
     def split_figure_vertically(self, coords):
@@ -26,8 +33,15 @@ class SHAPE:
             return [], []
         if arr.ndim != 2 or arr.shape[1] < 2:
             raise ValueError(f"Expected coords shaped (n, 2), got {arr.shape}")
-        right_coords = arr[arr[:, 0] >= 0].tolist()
-        left_coords = arr[arr[:, 0] <= 0].tolist()
+        right_indices = np.where(arr[:, 0] >= 0)[0]
+        left_indices = np.where(arr[:, 0] < 0)[0]
+        
+        right_coords = arr[right_indices].tolist()
+        left_coords = arr[left_indices].tolist()
+
+        right_coords = self.helper.center_coords_at_origin(right_coords)
+        left_coords = self.helper.center_coords_at_origin(left_coords)
+        
         return right_coords, left_coords
     
     # Constructs ellipses datapoints

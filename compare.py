@@ -35,8 +35,8 @@ class COMPARE:
         self.lower_v_diamond_datapoints = dict()
         self.upper_v_figure_datapoints = dict()
         self.lower_v_figure_datapoints = dict()
-        self.w_shape = 0.8
-        self.w_area = 0.2
+        self.w_shape = 0.9
+        self.w_area = 0.1
     
     def get_ellipse_similarities(self):
         return self.ellipse_similarity
@@ -174,6 +174,7 @@ class COMPARE:
             hull = monotone_chain_convex_hull(pts)
             figure_areas[name] = shoelace_area(hull)
             self.figure_areas = figure_areas
+        return self.figure_areas
 
 
     def get_figure_circumferences(self, plot):
@@ -221,7 +222,7 @@ class COMPARE:
             hull = monotone_chain_convex_hull(pts)
             figure_perimeters[name] = perimeter(hull)
             self.figure_circumference[name] = figure_perimeters[name]
-
+        return self.figure_circumference
 
     def get_rectangle_areas(self, plot):
         rectangle = plot.get_width_height()

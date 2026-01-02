@@ -74,6 +74,22 @@ class HELPER:
     #     return max(1 - min_dist / (geo_avg_curve_len / math.sqrt(2)), 0)
     
 
+    def center_coords_at_origin(self, coords):
+        coords_array = np.asarray(coords, dtype=float)
+        
+        if coords_array.size == 0 or len(coords_array) == 0:
+            return coords_array
+        
+        # Calculate centroid
+        centroid = np.mean(coords_array, axis=0)
+        
+        # Center at origin by subtracting centroid
+        centered = coords_array - centroid
+        
+        return centered
+
+
+
     def raw_shape_similarity(self, shape1, shape2, rotations=10, align_rotation=True):
         curve1 = np.asarray(shape1, dtype=float)
         curve2 = np.asarray(shape2, dtype=float)

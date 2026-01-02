@@ -115,6 +115,8 @@ class PLOT:
             coords = np.array(coords)
             rotated_coords = self.helper._rotate_coords_pca(coords)
 
+            rotated_coords = self.helper.center_coords_at_origin(rotated_coords)
+
             figure, axes = plt.subplots(figsize=(12, 9))
 
             axes.plot(rotated_coords[:, 0], rotated_coords[:, 1], "bo-", label="DXF data")
@@ -123,8 +125,8 @@ class PLOT:
 
             
             if typ == "dynamic":
-                fig_width = max(rotated_coords[:, 0]) - min(rotated_coords[:, 0]) # x-axis max ja min points absolute difference
-                fig_length = max(rotated_coords[:, 1]) - min(rotated_coords[:, 1]) # y-axis max ja min points absolute difference
+                fig_width = max(rotated_coords[:, 0]) - min(rotated_coords[:, 0])
+                fig_length = max(rotated_coords[:, 1]) - min(rotated_coords[:, 1])
                 self.width_height[name] = (fig_width, fig_length)
             elif typ == "static":
                 (fig_width, fig_length) = self.get_average_width_height()
@@ -165,16 +167,16 @@ class PLOT:
                     )
                 axes.add_patch(rectangle)
 
-
-            axes.text(0.05, 0, f"Similarity {datapoints[name]:.2f}%", backgroundcolor="blue", color="white", fontsize=16)
+            axes.text(0.05, 0, f"Similarity {datapoints[name]:.2f}%", backgroundcolor="blue", color="white", fontsize=20)
 
             axes.set_aspect("equal", adjustable="box")
-            axes.set_title(f"Plot for {name}")
-            axes.legend()
+            axes.set_title(f"Plot for {name}", fontsize=14)
+            axes.legend(fontsize=14)
             axes.grid(True, alpha=0.3)
 
-            axes.set_xlabel("X (mm)")
-            axes.set_ylabel("Y (mm)")
+            axes.set_xlabel("X (mm)", fontsize=20)
+            axes.set_ylabel("Y (mm)", fontsize=20)
+            axes.tick_params(axis='both', which='major', labelsize=20)
 
             if save:
                 figure.savefig(os.path.join(self.img_folder, f"{name}({typ} {shape}).png"), dpi=300)
@@ -200,22 +202,29 @@ class PLOT:
 
             coords = np.array(coords)
 
+            coords = self.helper.center_coords_at_origin(coords)
+
+            coords = self.helper._rotate_coords_pca(coords)
+
             figure, axes = plt.subplots(figsize=(12, 9))
 
             axes.plot(coords[:, 0], coords[:, 1], "bo-", label="DXF data")
-
             axes.plot(0, 0, 'r+', markersize=10, markeredgewidth=2, label="Origin (0,0)")
 
             axes.set_aspect("equal", adjustable="box")
-            axes.set_title(f"Plot for {name}")
-            axes.legend()
+            axes.set_title(f"Plot for {name}", fontsize=20)
+            axes.legend(fontsize=20)
             axes.grid(True, alpha=0.3)
 
-            axes.set_xlabel("X (mm)")
-            axes.set_ylabel("Y (mm)")
+            axes.set_xlabel("X (mm)", fontsize=20)
+            axes.set_ylabel("Y (mm)", fontsize=20)
+            axes.tick_params(axis='both', which='major', labelsize=20)
+            
+            # Force tight layout to ensure all text is visible
+            figure.tight_layout()
 
             if save:
-                figure.savefig(os.path.join(self.img_folder, f"half_{name}({shape}).png"), dpi=300)
+                figure.savefig(os.path.join(self.img_folder, f"{name}({shape}).png"), dpi=300, bbox_inches='tight')
                 print(f"SAVED {name}{shape}.png")
 
             if show:
@@ -236,6 +245,8 @@ class PLOT:
         if datapoints.ndim != 2 or datapoints.shape[1] < 2:
             print(f"Expected 2D array with shape (n, 2), got shape {datapoints.shape}")
             return
+
+        datapoints = self.helper.center_coords_at_origin(datapoints)
 
         figure = plt.figure(figsize=(12, 8))
         # Plot all x and y coordinates: datapoints[:, 0] gets all x values, datapoints[:, 1] gets all y values
