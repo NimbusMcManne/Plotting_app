@@ -1,5 +1,5 @@
 import numpy as np
-from helper import HELPER
+from src.helper import HELPER
 
 class SHAPE:
 

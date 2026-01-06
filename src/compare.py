@@ -3,10 +3,9 @@ import os
 import sys
 from scipy.spatial.distance import cdist
 from shapesimilarity import shape_similarity
-import cv2
-from plotting import PLOT
-from shapes import SHAPE
-from helper import HELPER
+from src.plotting import PLOT
+from src.shapes import SHAPE
+from src.helper import HELPER
 
 class COMPARE:
     def __init__(self, dxf_folder, BASE_DIR):
@@ -239,33 +238,44 @@ class COMPARE:
 
     def compare_circumferences(self):
         for name, circumference in self.ellipse_circumference.items():
-            difference = self.figure_circumference[name] / circumference
-            precentage = 100 * difference
-            print(f"{name} is {precentage}% ellipse")
-    
+            if name in self.figure_circumference:
+                difference = self.figure_circumference[name] / circumference
+                precentage = 100 * difference
+                print(f"{name} is {precentage}% ellipse")
+            else:
+                print(f"Warning: Figure circumference not found for {name}, skipping comparison")
 
 
     def compare_ellipse_areas(self):
         compared_ellipse_areas = dict()
         for name, area in self.ellipse_areas.items():
-            difference = self.figure_areas[name] / area
-            compared_ellipse_areas[name] = difference
+            if name in self.figure_areas:
+                difference = self.figure_areas[name] / area
+                compared_ellipse_areas[name] = difference
+            else:
+                print(f"Warning: Figure area not found for {name}, skipping comparison")
         return compared_ellipse_areas
         
 
     def compare_diamond_areas(self):
         compared_diamond_areas = dict()
         for name, area in self.diamond_areas.items():
-            difference = self.figure_areas[name] / area
-            compared_diamond_areas[name] = difference
+            if name in self.figure_areas:
+                difference = self.figure_areas[name] / area
+                compared_diamond_areas[name] = difference
+            else:
+                print(f"Warning: Figure area not found for {name}, skipping comparison")
         return compared_diamond_areas
     
 
     def compare_rectangle_areas(self):
         compared_rectangle_areas = dict()
         for name, area in self.rectangle_areas.items():
-            difference = self.figure_areas[name] / area
-            compared_rectangle_areas[name] = difference
+            if name in self.figure_areas:
+                difference = self.figure_areas[name] / area
+                compared_rectangle_areas[name] = difference
+            else:
+                print(f"Warning: Figure area not found for {name}, skipping comparison")
         return compared_rectangle_areas
 
 

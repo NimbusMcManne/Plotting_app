@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from helper import HELPER
+from src.helper import HELPER
 import numpy as np
 import ezdxf as dxf
 import os
@@ -105,7 +105,7 @@ class PLOT:
 
 
 
-    def plot_similarity_dict_figures(self, datapoints, typ="dynamic", shape="ellipse", save=True, show=False):
+    def plot_similarity_dict_figures(self, datapoints, save_path, typ="dynamic", shape="ellipse", save=True, show=False):
 
         for name, coords in self.coordinates.items():
             if not coords:
@@ -179,7 +179,7 @@ class PLOT:
             axes.tick_params(axis='both', which='major', labelsize=20)
 
             if save:
-                figure.savefig(os.path.join(self.img_folder, f"{name}({typ} {shape}).png"), dpi=300)
+                figure.savefig(os.path.join(save_path, f"{name}({typ} {shape}).png"), dpi=300)
                 print(f"SAVED {name}{shape}.png")
 
             if show:
