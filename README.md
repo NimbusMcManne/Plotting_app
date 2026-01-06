@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ## Usage
 In the project folder run the code with:
 ```bash
-python -m src/main --data_folder /data --save_path /plot_figures --shape ellipse --type dynamic --save True --show False
+python -m src/main --data_folder <data folder> --save_path <plot save folder> --shape ellipse --type dynamic --save True --show False
 ```
 
 ```
